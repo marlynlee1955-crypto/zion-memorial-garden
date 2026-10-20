@@ -94,7 +94,7 @@ function initRegister() {
 
             try {
                 // 1. Create account in Supabase Auth
-                const { data, error } = await supabase.auth.signUp({
+                const { data, error } = await supabaseClient.auth.signUp({
                     email: email,
                     password: password
                 });
@@ -106,7 +106,7 @@ function initRegister() {
 
                 // 2. Save extra profile info to the profiles table
                 if (data.user) {
-                    const { error: profileError } = await supabase
+                    const { error: profileError } = await supabaseClient
                         .from('profiles')
                         .insert([
                             {
