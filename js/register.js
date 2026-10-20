@@ -1,5 +1,5 @@
 // =========================================
-// REGISTRATION FUNCTIONALITY
+// REGISTRATION FUNCTIONALITY (Supabase)
 // =========================================
 
 function initRegister() {
@@ -9,27 +9,32 @@ function initRegister() {
     const switchToLogin = document.getElementById("switchToLogin");
 
     // Open Register
-    registerBtn.onclick = (e) => {
-        e.preventDefault();
-        registerModal.style.display = "flex";
-        const loginModal = document.getElementById("loginModal");
-        if (loginModal) loginModal.style.display = "none";
-    };
+    if (registerBtn) {
+        registerBtn.onclick = (e) => {
+            e.preventDefault();
+            registerModal.style.display = "flex";
+            const loginModal = document.getElementById("loginModal");
+            if (loginModal) loginModal.style.display = "none";
+        };
+    }
 
     // Close register
-    registerClose.onclick = () => registerModal.style.display = "none";
+    if (registerClose) {
+        registerClose.onclick = () => registerModal.style.display = "none";
+    }
 
     // Switch to login
-    switchToLogin.onclick = (e) => {
-        e.preventDefault();
-        registerModal.style.display = "none";
-        
-        // Open login modal directly
-        const loginModal = document.getElementById("loginModal");
-        if (loginModal) {
-            loginModal.style.display = "block";
-        }
-    };
+    if (switchToLogin) {
+        switchToLogin.onclick = (e) => {
+            e.preventDefault();
+            registerModal.style.display = "none";
+            
+            const loginModal = document.getElementById("loginModal");
+            if (loginModal) {
+                loginModal.style.display = "block";
+            }
+        };
+    }
 
     // Close when clicking outside
     window.addEventListener('click', (event) => {
@@ -42,19 +47,14 @@ function initRegister() {
     const phoneInput = document.getElementById("regPhone");
     if (phoneInput) {
         phoneInput.addEventListener('input', (e) => {
-            // Remove any non-digit characters
             let value = e.target.value.replace(/\D/g, '');
-            
-            // Limit to 11 digits
             if (value.length > 11) {
                 value = value.slice(0, 11);
             }
-            
             e.target.value = value;
         });
 
         phoneInput.addEventListener('keypress', (e) => {
-            // Only allow numbers
             if (!/[0-9]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'Tab') {
                 e.preventDefault();
                 alert("Numbers only! Please enter digits 0-9");
@@ -62,36 +62,75 @@ function initRegister() {
         });
     }
 
-    // Handle registration form submission
+    // Handle registration form submission with Supabase
     const registerForm = document.getElementById("newRegisterForm");
     if (registerForm) {
-        registerForm.addEventListener('submit', (e) => {
+        registerForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const formData = {
-                fullName: document.getElementById("regFullName").value,
-                username: document.getElementById("regUsername").value,
-                email: document.getElementById("regEmail").value,
-                phone: document.getElementById("regPhone").value,
-                password: document.getElementById("regPassword").value,
-                confirmPassword: document.getElementById("regConfirmPassword").value
-            };
+            const fullName = document.getElementById("regFullName").value.trim();
+            const username = document.getElementById("regUsername").value.trim();
+            const email = document.getElementById("regEmail").value.trim();
+            const phone = document.getElementById("regPhone").value.trim();
+            const password = document.getElementById("regPassword").value;
+            const confirmPassword = document.getElementById("regConfirmPassword").value;
 
             // Validate phone number
-            if (formData.phone && !/^\d{11}$/.test(formData.phone)) {
+            if (phone && !/^\d{11}$/.test(phone)) {
                 alert("Phone number must be exactly 11 digits!");
                 return;
             }
 
             // Validate passwords match
-            if (formData.password !== formData.confirmPassword) {
+            if (password !== confirmPassword) {
                 alert("Passwords do not match!");
                 return;
             }
 
-            // Add your registration logic here
-            console.log("Registration attempt:", formData);
-            alert("Registration successful - connect to your backend");
+            if (password.length < 6) {
+                alert("Password must be at least 6 characters!");
+                return;
+            }
+
+            try {
+                // 1. Create account in Supabase Auth
+                const { data, error } = await supabase.auth.signUp({
+                    email: email,
+                    password: password
+                });
+
+                if (error) {
+                    alert("Registration failed: " + error.message);
+                    return;
+                }
+
+                // 2. Save extra profile info to the profiles table
+                if (data.user) {
+                    const { error: profileError } = await supabase
+                        .from('profiles')
+                        .insert([
+                            {
+                                id: data.user.id,
+                                full_name: fullName,
+                                username: username,
+                                email: email,
+                                phone: phone || null
+                            }
+                        ]);
+
+                    if (profileError) {
+                        console.error("Profile error:", profileError);
+                        alert("Account created but profile saving failed. You can still login.");
+                    }
+                }
+
+                alert("Registration successful! Please check your email to confirm your account, then login.");
+                registerModal.style.display = "none";
+
+            } catch (err) {
+                console.error(err);
+                alert("Something went wrong. Please try again.");
+            }
         });
     }
 
@@ -99,7 +138,6 @@ function initRegister() {
     const toggleIcons = document.querySelectorAll('.toggle-password');
     toggleIcons.forEach(icon => {
         icon.addEventListener('click', function() {
-            // Find the input field in the same input-wrapper
             const inputWrapper = this.closest('.input-wrapper');
             const input = inputWrapper.querySelector('input[type="password"], input[type="text"]');
             
