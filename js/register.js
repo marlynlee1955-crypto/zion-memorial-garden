@@ -93,35 +93,22 @@ function initRegister() {
             }
 
             try {
-                // 1. Create account in Supabase Auth
+                // Create account + send metadata for the trigger
                 const { data, error } = await supabaseClient.auth.signUp({
                     email: email,
-                    password: password
+                    password: password,
+                    options: {
+                        data: {
+                            full_name: fullName,
+                            username: username,
+                            phone: phone || null
+                        }
+                    }
                 });
 
                 if (error) {
                     alert("Registration failed: " + error.message);
                     return;
-                }
-
-                // 2. Save extra profile info to the profiles table
-                if (data.user) {
-                    const { error: profileError } = await supabaseClient
-                        .from('profiles')
-                        .insert([
-                            {
-                                id: data.user.id,
-                                full_name: fullName,
-                                username: username,
-                                email: email,
-                                phone: phone || null
-                            }
-                        ]);
-
-                    if (profileError) {
-                        console.error("Profile error:", profileError);
-                        alert("Account created but profile saving failed. Please contact support.");
-                    }
                 }
 
                 // Success message - user must verify email
