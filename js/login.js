@@ -1,5 +1,5 @@
 // =========================================
-// LOGIN FUNCTIONALITY
+// LOGIN FUNCTIONALITY (Supabase)
 // =========================================
 
 function initLogin() {
@@ -56,68 +56,72 @@ function initLogin() {
 
     // Close when clicking outside
     window.addEventListener('click', (event) => {
-        if (loginModal.style.display === "block" && 
+        if (loginModal && loginModal.style.display === "block" && 
             !loginModal.contains(event.target) && 
             event.target !== loginBtn) {
             loginModal.style.display = "none";
         }
     });
 
-    // Handle login form submission
+    // Handle login form submission with Supabase
     const loginForm = document.getElementById("loginForm");
     if (loginForm) {
-        loginForm.addEventListener('submit', (e) => {
+        loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const email = document.getElementById("loginEmail").value;
+            const email = document.getElementById("loginEmail").value.trim();
             const password = document.getElementById("loginPassword").value;
             const rememberMe = document.getElementById("rememberMe").checked;
             
-            // Simple validation
             if (!email || !password) {
                 alert("Please fill in all fields");
                 return;
             }
-            
-            // Handle Remember Me functionality
-            if (rememberMe) {
-                // Store email and password in localStorage
-                localStorage.setItem("rememberedEmail", email);
-                localStorage.setItem("rememberedPassword", password);
-                console.log("Email and password saved for next login");
-            } else {
-                // Clear remembered credentials
-                localStorage.removeItem("rememberedEmail");
-                localStorage.removeItem("rememberedPassword");
+
+            try {
+                // Sign in with Supabase
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+
+                if (error) {
+                    alert("Login failed: " + error.message);
+                    return;
+                }
+
+                // Save session info
+                sessionStorage.setItem("isLoggedIn", "true");
+                sessionStorage.setItem("userEmail", email);
+                sessionStorage.setItem("userId", data.user.id);
+
+                if (rememberMe) {
+                    localStorage.setItem("rememberedEmail", email);
+                } else {
+                    localStorage.removeItem("rememberedEmail");
+                    localStorage.removeItem("rememberedPassword");
+                }
+
+                // Redirect to dashboard
+                window.location.href = "dashboard.html";
+
+            } catch (err) {
+                console.error(err);
+                alert("Something went wrong. Please try again.");
             }
-            
-            // Add your login logic here
-            console.log("Login attempt:", { email, password, rememberMe });
-            
-            // Store user session (in real app, this would come from backend)
-            sessionStorage.setItem("isLoggedIn", "true");
-            sessionStorage.setItem("userEmail", email);
-            
-            // Redirect to dashboard immediately without alert
-            window.location.href = "dashboard.html";
         });
     }
 
-    // Load remembered credentials on page load
+    // Load remembered email
     const rememberedEmail = localStorage.getItem("rememberedEmail");
-    const rememberedPassword = localStorage.getItem("rememberedPassword");
-    
-    if (rememberedEmail && rememberedPassword) {
+    if (rememberedEmail) {
         const emailInput = document.getElementById("loginEmail");
-        const passwordInput = document.getElementById("loginPassword");
         const rememberCheckbox = document.getElementById("rememberMe");
-        
         if (emailInput) emailInput.value = rememberedEmail;
-        if (passwordInput) passwordInput.value = rememberedPassword;
         if (rememberCheckbox) rememberCheckbox.checked = true;
     }
 
-    // Toggle password visibility for login
+    // Toggle password visibility
     const loginEyeIcon = document.querySelector(".login-eye-icon");
     if (loginEyeIcon) {
         loginEyeIcon.addEventListener('click', function() {
