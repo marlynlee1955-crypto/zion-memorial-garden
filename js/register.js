@@ -120,11 +120,12 @@ function initRegister() {
 
                     if (profileError) {
                         console.error("Profile error:", profileError);
-                        alert("Account created but profile saving failed. You can still login.");
+                        alert("Account created but profile saving failed. Please contact support.");
                     }
                 }
 
-                alert("Registration successful! Please check your email to confirm your account, then login.");
+                // Success message - user must verify email
+                alert("Registration successful!\n\nPlease check your email and click the verification link.\nAfter verifying, you can log in.");
                 registerModal.style.display = "none";
 
             } catch (err) {
