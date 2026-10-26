@@ -80,7 +80,7 @@ function initLogin() {
 
             try {
                 // Sign in with Supabase
-                const { data, error } = await supabase.auth.signInWithPassword({
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
                     email: email,
                     password: password
                 });
