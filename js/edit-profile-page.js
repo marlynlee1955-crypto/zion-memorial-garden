@@ -1,215 +1,189 @@
 // =========================================
-// EDIT PROFILE PAGE FUNCTIONALITY
+// EDIT PROFILE PAGE (with Profile Picture Upload)
 // =========================================
 
-function initEditProfilePage() {
-    const editProfilePage = document.getElementById('editProfilePage');
-    const editProfileMenuBtn = document.getElementById('editProfileMenuBtn');
-    const editProfileUserBtn = document.getElementById('editProfileUserBtn');
-    const editProfileCancelBtn = document.getElementById('editProfileCancelBtn');
-    const editProfileForm = document.getElementById('editProfilePageForm');
-    const editProfileChangePicBtn = document.getElementById('editProfileChangePicBtn');
-    const editProfilePictureInput = document.getElementById('editProfilePictureInput');
-    const editProfilePicturePreview = document.getElementById('editProfilePicturePreview');
+async function initEditProfilePage() {
+    const editProfilePage = document.getElementById("edit-profile-page-component");
+    if (!editProfilePage) return;
 
-    // Menu button - toggle sidebar dropdown
-    if (editProfileMenuBtn) {
-        editProfileMenuBtn.addEventListener('click', () => {
-            const sidebar = document.querySelector('.sidebar-menu');
-            const overlay = document.getElementById('overlay');
-            if (sidebar) {
-                sidebar.classList.toggle('active');
-            }
-            if (overlay) {
-                overlay.classList.toggle('active');
-            }
+    // Check if user is logged in
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    
+    if (!user) {
+        alert("Please login first");
+        window.location.href = "index.html";
+        return;
+    }
+
+    // Load current profile data
+    await loadProfileData(user.id);
+
+    // Handle profile picture change
+    const avatarInput = document.getElementById("avatarInput");
+    const avatarPreview = document.getElementById("avatarPreview");
+    const changeAvatarBtn = document.getElementById("changeAvatarBtn");
+
+    if (changeAvatarBtn && avatarInput) {
+        changeAvatarBtn.addEventListener("click", () => {
+            avatarInput.click();
         });
     }
 
-    // User button - close edit profile and open profile modal
-    if (editProfileUserBtn) {
-        editProfileUserBtn.addEventListener('click', () => {
-            editProfilePage.classList.remove('active');
-            const profileModal = document.querySelector('.profile-modal-overlay');
-            if (profileModal) {
-                profileModal.classList.add('active');
-            }
-        });
-    }
-
-    // Handle sidebar menu clicks when on edit profile page
-    setupSidebarNavigation();
-
-    // Cancel button
-    if (editProfileCancelBtn) {
-        editProfileCancelBtn.addEventListener('click', () => {
-            editProfilePage.classList.remove('active');
-            const profileModal = document.querySelector('.profile-modal-overlay');
-            if (profileModal) {
-                profileModal.classList.add('active');
-            }
-        });
-    }
-
-    // Change profile picture
-    if (editProfileChangePicBtn && editProfilePictureInput) {
-        editProfileChangePicBtn.addEventListener('click', () => {
-            editProfilePictureInput.click();
-        });
-
-        editProfilePictureInput.addEventListener('change', (e) => {
+    if (avatarInput) {
+        avatarInput.addEventListener("change", async (e) => {
             const file = e.target.files[0];
-            if (file) {
-                // Check if file is an image
-                if (!file.type.startsWith('image/')) {
-                    alert('Please select an image file');
-                    return;
-                }
+            if (!file) return;
 
-                // Check file size (max 2MB)
-                if (file.size > 2 * 1024 * 1024) {
-                    alert('Image size should be less than 2MB');
-                    return;
-                }
-
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    editProfilePicturePreview.src = event.target.result;
-                };
-                reader.readAsDataURL(file);
+            // Only allow images
+            if (!file.type.startsWith("image/")) {
+                alert("Please select an image file (jpg, png, etc.)");
+                return;
             }
-        });
-    }
 
-    // Handle form submission
-    if (editProfileForm) {
-        editProfileForm.addEventListener('submit', (e) => {
-            e.preventDefault();
+            // Max 2MB
+            if (file.size > 2 * 1024 * 1024) {
+                alert("Image must be less than 2MB");
+                return;
+            }
 
-            const fullName = document.getElementById('editProfileFullName').value;
-            const email = document.getElementById('editProfileEmail').value;
-            const username = document.getElementById('editProfileUsername').value;
-            const phone = document.getElementById('editProfilePhone').value;
-
-            // Save to localStorage
-            const profileData = {
-                fullName,
-                email,
-                username,
-                phone
+            // Show preview immediately
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                if (avatarPreview) {
+                    avatarPreview.src = event.target.result;
+                }
             };
-            localStorage.setItem('userProfile', JSON.stringify(profileData));
+            reader.readAsDataURL(file);
 
-            // Save profile picture if changed
-            if (editProfilePicturePreview.src && !editProfilePicturePreview.src.includes('image 6.png')) {
-                localStorage.setItem('profilePicture', editProfilePicturePreview.src);
+            // Upload to Supabase Storage
+            try {
+                const fileExt = file.name.split('.').pop();
+                const fileName = `${user.id}/avatar.${fileExt}`;
+
+                // Upload the file
+                const { error: uploadError } = await supabaseClient
+                    .storage
+                    .from('avatars')
+                    .upload(fileName, file, {
+                        upsert: true, // overwrite if already exists
+                        contentType: file.type
+                    });
+
+                if (uploadError) {
+                    console.error(uploadError);
+                    alert("Failed to upload image: " + uploadError.message);
+                    return;
+                }
+
+                // Get the public URL
+                const { data: { publicUrl } } = supabaseClient
+                    .storage
+                    .from('avatars')
+                    .getPublicUrl(fileName);
+
+                // Save the URL to the profiles table
+                const { error: updateError } = await supabaseClient
+                    .from('profiles')
+                    .update({ 
+                        avatar_url: publicUrl,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', user.id);
+
+                if (updateError) {
+                    console.error(updateError);
+                    alert("Image uploaded but failed to save profile. Please try again.");
+                    return;
+                }
+
+                alert("Profile picture updated successfully!");
+
+            } catch (err) {
+                console.error(err);
+                alert("Something went wrong while uploading the picture.");
             }
-
-            alert('Profile updated successfully!');
-            editProfilePage.classList.remove('active');
-
-            // Reload the page to show updated info
-            location.reload();
         });
     }
 
-    // Load existing profile data
-    loadEditProfileData();
-}
-
-function setupSidebarNavigation() {
-    const editProfilePage = document.getElementById('editProfilePage');
-    const sidebar = document.querySelector('.sidebar-menu');
-    const overlay = document.getElementById('overlay');
-
-    // Profile menu item
-    const profileMenuItem = document.getElementById('profileMenuItem');
-    if (profileMenuItem) {
-        profileMenuItem.addEventListener('click', (e) => {
+    // Handle form submission (name, phone, etc.)
+    const editForm = document.getElementById("editProfileForm");
+    if (editForm) {
+        editForm.addEventListener("submit", async (e) => {
             e.preventDefault();
-            // Close edit profile page
-            editProfilePage.classList.remove('active');
-            // Open profile modal
-            const profileModal = document.querySelector('.profile-modal-overlay');
-            if (profileModal) {
-                profileModal.classList.add('active');
-            }
-            // Close sidebar
-            if (sidebar) sidebar.classList.remove('active');
-            if (overlay) overlay.classList.remove('active');
-        });
-    }
 
-    // Dashboard menu item
-    const dashboardMenuItem = document.getElementById('dashboardMenuItem');
-    if (dashboardMenuItem) {
-        dashboardMenuItem.addEventListener('click', (e) => {
-            e.preventDefault();
-            // Close edit profile page
-            editProfilePage.classList.remove('active');
-            // Close sidebar
-            if (sidebar) sidebar.classList.remove('active');
-            if (overlay) overlay.classList.remove('active');
-        });
-    }
+            const fullName = document.getElementById("editFullName")?.value.trim();
+            const username = document.getElementById("editUsername")?.value.trim();
+            const phone = document.getElementById("editPhone")?.value.trim();
 
-    // Reserve a plot menu item
-    const reservePlotMenuItem = document.getElementById('reservePlotMenuItem');
-    if (reservePlotMenuItem) {
-        reservePlotMenuItem.addEventListener('click', (e) => {
-            e.preventDefault();
-            // Close edit profile page
-            editProfilePage.classList.remove('active');
-            // Open reservation modal
-            const reservationModal = document.querySelector('.reservation-modal-overlay');
-            if (reservationModal) {
-                reservationModal.classList.add('active');
-            }
-            // Close sidebar
-            if (sidebar) sidebar.classList.remove('active');
-            if (overlay) overlay.classList.remove('active');
-        });
-    }
+            try {
+                const { error } = await supabaseClient
+                    .from('profiles')
+                    .update({
+                        full_name: fullName,
+                        username: username,
+                        phone: phone || null,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', user.id);
 
-    // Sign out button
-    const signoutBtn = document.querySelector('.signout-btn');
-    if (signoutBtn) {
-        signoutBtn.addEventListener('click', () => {
-            if (confirm("Are you sure you want to sign out?")) {
-                sessionStorage.clear();
-                localStorage.removeItem("rememberedEmail");
-                localStorage.removeItem("rememberedPassword");
-                window.location.href = "index.html";
+                if (error) {
+                    alert("Failed to update profile: " + error.message);
+                    return;
+                }
+
+                alert("Profile updated successfully!");
+                
+            } catch (err) {
+                console.error(err);
+                alert("Something went wrong. Please try again.");
             }
         });
-    }
-}
-
-function loadEditProfileData() {
-    const savedProfile = localStorage.getItem('userProfile');
-    if (savedProfile) {
-        const profile = JSON.parse(savedProfile);
-        
-        const fullNameInput = document.getElementById('editProfileFullName');
-        const emailInput = document.getElementById('editProfileEmail');
-        const usernameInput = document.getElementById('editProfileUsername');
-        const phoneInput = document.getElementById('editProfilePhone');
-
-        if (fullNameInput) fullNameInput.value = profile.fullName || '';
-        if (emailInput) emailInput.value = profile.email || '';
-        if (usernameInput) usernameInput.value = profile.username || '';
-        if (phoneInput) phoneInput.value = profile.phone || '';
-    }
-
-    // Load profile picture
-    const savedPicture = localStorage.getItem('profilePicture');
-    const editProfilePicturePreview = document.getElementById('editProfilePicturePreview');
-    if (savedPicture && editProfilePicturePreview) {
-        editProfilePicturePreview.src = savedPicture;
     }
 }
 
-// Export for use in dashboard-loader.js
+// Load profile data from database
+async function loadProfileData(userId) {
+    try {
+        const { data, error } = await supabaseClient
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .single();
+
+        if (error) {
+            console.error("Error loading profile:", error);
+            return;
+        }
+
+        if (data) {
+            // Fill the form fields
+            const fullNameInput = document.getElementById("editFullName");
+            const usernameInput = document.getElementById("editUsername");
+            const phoneInput = document.getElementById("editPhone");
+            const emailInput = document.getElementById("editEmail");
+            const avatarPreview = document.getElementById("avatarPreview");
+
+            if (fullNameInput) fullNameInput.value = data.full_name || "";
+            if (usernameInput) usernameInput.value = data.username || "";
+            if (phoneInput) phoneInput.value = data.phone || "";
+            if (emailInput) emailInput.value = data.email || "";
+
+            // Show avatar or blank image
+            if (avatarPreview) {
+                if (data.avatar_url) {
+                    avatarPreview.src = data.avatar_url;
+                } else {
+                    // Default blank / white avatar
+                    avatarPreview.src = "https://via.placeholder.com/150/FFFFFF/CCCCCC?text=No+Photo";
+                }
+            }
+        }
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+// Export
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { initEditProfilePage };
 }
