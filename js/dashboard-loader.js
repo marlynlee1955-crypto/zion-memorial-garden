@@ -90,7 +90,6 @@ function initializeDashboard() {
     const closeBtn = document.getElementById('closeBtn');
 
     if (menuBtn && sidebarMenu && overlay) {
-        // Open sidebar
         menuBtn.addEventListener('click', () => {
             sidebarMenu.classList.add('active');
             overlay.classList.add('active');
@@ -98,7 +97,6 @@ function initializeDashboard() {
     }
 
     if (closeBtn && sidebarMenu && overlay) {
-        // Close sidebar
         closeBtn.addEventListener('click', () => {
             sidebarMenu.classList.remove('active');
             overlay.classList.remove('active');
@@ -106,7 +104,6 @@ function initializeDashboard() {
     }
 
     if (overlay && sidebarMenu) {
-        // Close sidebar when clicking overlay
         overlay.addEventListener('click', () => {
             sidebarMenu.classList.remove('active');
             overlay.classList.remove('active');
@@ -124,17 +121,10 @@ function initializeDashboard() {
     if (profileMenuItem) {
         profileMenuItem.addEventListener('click', (e) => {
             e.preventDefault();
-            
-            // Close reservation modal if open
             closeReservationModal();
-            
-            // Open profile modal
             openProfileModal();
-            
-            // Update active state
             updateActiveMenuItem('profile');
             
-            // Close sidebar after clicking
             if (sidebarMenu && overlay) {
                 sidebarMenu.classList.remove('active');
                 overlay.classList.remove('active');
@@ -147,17 +137,10 @@ function initializeDashboard() {
     if (dashboardMenuItem) {
         dashboardMenuItem.addEventListener('click', (e) => {
             e.preventDefault();
-            
-            // Close reservation modal if open
             closeReservationModal();
-            
-            // Close profile modal
             closeProfileModal();
-            
-            // Update active state
             updateActiveMenuItem('dashboard');
             
-            // Close sidebar after clicking
             if (sidebarMenu && overlay) {
                 sidebarMenu.classList.remove('active');
                 overlay.classList.remove('active');
@@ -165,7 +148,6 @@ function initializeDashboard() {
         });
     }
 
-    // Function to update active menu item
     function updateActiveMenuItem(page) {
         const allMenuItems = document.querySelectorAll('.menu-item');
         allMenuItems.forEach(item => item.classList.remove('active'));
@@ -182,8 +164,6 @@ function initializeDashboard() {
         }
     }
 
-    // Don't set any initial active state - only activate when clicked
-
     // =========================================
     // PROFILE MODAL FUNCTIONALITY
     // =========================================
@@ -195,19 +175,12 @@ function initializeDashboard() {
 
     function openProfileModal() {
         if (profileModal) {
-            // Get user data from session
             const userEmail = sessionStorage.getItem("userEmail") || "user@example.com";
-            
-            // Update profile modal with user data
             const emailField = document.getElementById('profileEmail');
             if (emailField) emailField.textContent = userEmail;
             
-            // Load saved profile picture if exists
             loadProfilePicture();
-            
             profileModal.classList.add('active');
-            
-            // Update active menu item
             updateActiveMenuItem('profile');
         }
     }
@@ -215,43 +188,36 @@ function initializeDashboard() {
     function closeProfileModal() {
         if (profileModal) {
             profileModal.classList.remove('active');
-            
-            // Update active menu item
             updateActiveMenuItem('dashboard');
         }
     }
 
     // =========================================
-    // PROFILE PICTURE UPLOAD FUNCTIONALITY
+    // PROFILE PICTURE FUNCTIONALITY
     // =========================================
     function loadProfilePicture() {
         const savedPicture = localStorage.getItem('userProfilePicture');
         const savedProfile = localStorage.getItem('userProfile');
         const defaultPicture = 'assets/images/icons/image 6.png';
         
-        // Update profile picture in profile modal
         const profilePicture = document.getElementById('profilePicture');
         if (profilePicture) {
             profilePicture.src = savedPicture || defaultPicture;
         }
         
-        // Update profile picture in profile page header
         const profileUserBtnImg = document.querySelector('#profileUserBtn img');
         if (profileUserBtnImg) {
             profileUserBtnImg.src = savedPicture || defaultPicture;
         }
         
-        // Update profile picture in dashboard header
         const userBtnImg = document.querySelector('.user-btn img');
         if (userBtnImg) {
             userBtnImg.src = savedPicture || defaultPicture;
         }
 
-        // Load profile data if exists
         if (savedProfile) {
             const profile = JSON.parse(savedProfile);
             
-            // Update profile display name and username
             const profileDisplayName = document.getElementById('profileDisplayName');
             const profileUsernameDisplay = document.getElementById('profileUsernameDisplay');
             const profileFullName = document.getElementById('profileFullName');
@@ -285,21 +251,45 @@ function initializeDashboard() {
         loadProfilePicture();
     }
 
-    // Edit Profile button - opens edit profile page
-    const editProfileBtn = document.getElementById('editProfileBtn');
-    const editProfilePage = document.getElementById('editProfilePage');
-    
-    if (editProfileBtn && editProfilePage) {
-        editProfileBtn.addEventListener('click', () => {
-            // Close profile modal
+    // =========================================
+    // EDIT PROFILE BUTTON (FIXED)
+    // =========================================
+    document.addEventListener('click', function(e) {
+        if (e.target && (
+            e.target.id === 'editProfileBtn' || 
+            e.target.textContent.trim() === 'Edit Profile' ||
+            e.target.closest('#editProfileBtn')
+        )) {
+            e.preventDefault();
+
+            // Close profile modal if open
             const profileModal = document.querySelector('.profile-modal-overlay');
             if (profileModal) {
                 profileModal.classList.remove('active');
             }
-            // Open edit profile page
-            editProfilePage.classList.add('active');
-        });
-    }
+
+            // Show the edit profile page component
+            const editProfilePage = document.getElementById('edit-profile-page-component');
+            if (editProfilePage) {
+                editProfilePage.style.display = 'block';
+                editProfilePage.classList.add('active');
+
+                // Call the init function
+                if (typeof initEditProfilePage === 'function') {
+                    initEditProfilePage();
+                }
+            }
+        }
+
+        // Close Edit Profile button
+        if (e.target && (e.target.id === 'closeEditProfileBtn' || e.target.classList.contains('close-edit-profile'))) {
+            const editProfilePage = document.getElementById('edit-profile-page-component');
+            if (editProfilePage) {
+                editProfilePage.style.display = 'none';
+                editProfilePage.classList.remove('active');
+            }
+        }
+    });
 
     // Load profile picture on page load
     loadProfilePicture();
@@ -315,7 +305,6 @@ function initializeDashboard() {
     const reservePlotMenuItem = document.getElementById('reservePlotMenuItem');
     const proceedBtn = document.getElementById('proceedBtn');
 
-    // Lawn descriptions
     const lawnDescriptions = {
         'condominium': {
             title: 'Condominium:',
@@ -343,7 +332,6 @@ function initializeDashboard() {
         if (reservationModal) {
             reservationModal.classList.add('active');
             
-            // Load profile picture in reservation modal
             const reservationUserBtnImg = document.querySelector('#reservationUserBtn img');
             const savedPicture = localStorage.getItem('userProfilePicture');
             if (reservationUserBtnImg && savedPicture) {
@@ -356,7 +344,6 @@ function initializeDashboard() {
         if (reservationModal) {
             reservationModal.classList.remove('active');
             
-            // Show dashboard content again
             const dashboardContent = document.querySelector('.dashboard-content');
             if (dashboardContent) {
                 dashboardContent.style.display = 'block';
@@ -364,16 +351,12 @@ function initializeDashboard() {
         }
     }
 
-    // Open reservation modal from sidebar menu
     if (reservePlotMenuItem) {
         reservePlotMenuItem.addEventListener('click', (e) => {
             e.preventDefault();
             openReservationModal();
-            
-            // Update active state
             updateActiveMenuItem('reservation');
             
-            // Close sidebar after clicking
             if (sidebarMenu && overlay) {
                 sidebarMenu.classList.remove('active');
                 overlay.classList.remove('active');
@@ -381,26 +364,20 @@ function initializeDashboard() {
         });
     }
 
-    // My Reservation menu item
     const myReservationMenuItem = document.getElementById('myReservationMenuItem');
     if (myReservationMenuItem) {
         myReservationMenuItem.addEventListener('click', (e) => {
             e.preventDefault();
-            
-            // Close any open modals
             closeReservationModal();
             closeProfileModal();
             
-            // Open my reservation page
             const myReservationPage = document.getElementById('myReservationPage');
             if (myReservationPage) {
                 myReservationPage.classList.add('active');
             }
             
-            // Update active state
             updateActiveMenuItem('myreservation');
             
-            // Close sidebar after clicking
             if (sidebarMenu && overlay) {
                 sidebarMenu.classList.remove('active');
                 overlay.classList.remove('active');
@@ -408,26 +385,20 @@ function initializeDashboard() {
         });
     }
 
-    // Deceased Family menu item
     const deceasedFamilyMenuItem = document.getElementById('deceasedFamilyMenuItem');
     if (deceasedFamilyMenuItem) {
         deceasedFamilyMenuItem.addEventListener('click', (e) => {
             e.preventDefault();
-            
-            // Close any open modals
             closeReservationModal();
             closeProfileModal();
             
-            // Open deceased family page
             const deceasedFamilyPage = document.getElementById('deceasedFamilyPage');
             if (deceasedFamilyPage) {
                 deceasedFamilyPage.classList.add('active');
             }
             
-            // Update active state
             updateActiveMenuItem('deceasedfamily');
             
-            // Close sidebar after clicking
             if (sidebarMenu && overlay) {
                 sidebarMenu.classList.remove('active');
                 overlay.classList.remove('active');
@@ -435,23 +406,19 @@ function initializeDashboard() {
         });
     }
 
-    // Open reservation modal from dashboard button
     if (makeReservationBtn) {
         makeReservationBtn.addEventListener('click', () => {
             openReservationModal();
         });
     }
 
-    // Back to Dashboard button
     if (backFromReservation) {
         backFromReservation.addEventListener('click', () => {
             closeReservationModal();
-            // Remove active state from reservation menu item
             updateActiveMenuItem('dashboard');
         });
     }
 
-    // Reservation page menu button (opens sidebar)
     if (reservationMenuBtn && sidebarMenu && overlay) {
         reservationMenuBtn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -460,7 +427,6 @@ function initializeDashboard() {
         });
     }
 
-    // Reservation page user button (opens profile)
     if (reservationUserBtn) {
         reservationUserBtn.addEventListener('click', () => {
             closeReservationModal();
@@ -468,20 +434,15 @@ function initializeDashboard() {
         });
     }
 
-    // Lawn tab switching
     const lawnTabs = document.querySelectorAll('.lawn-tab');
     const lawnTitle = document.getElementById('lawnTitle');
     const lawnDesc = document.getElementById('lawnDesc');
 
     lawnTabs.forEach(tab => {
         tab.addEventListener('click', () => {
-            // Remove active class from all tabs
             lawnTabs.forEach(t => t.classList.remove('active'));
-            
-            // Add active class to clicked tab
             tab.classList.add('active');
             
-            // Update description
             const lawnType = tab.getAttribute('data-lawn');
             if (lawnDescriptions[lawnType]) {
                 lawnTitle.textContent = lawnDescriptions[lawnType].title;
@@ -490,7 +451,6 @@ function initializeDashboard() {
         });
     });
 
-    // Proceed button
     if (proceedBtn) {
         proceedBtn.addEventListener('click', () => {
             const selectedPlot = document.getElementById('selectedPlot').textContent;
@@ -502,41 +462,26 @@ function initializeDashboard() {
         });
     }
 
-    // Back to Dashboard button
     if (backToDashboardBtn) {
         backToDashboardBtn.addEventListener('click', closeProfileModal);
     }
 
-    // Profile page menu button (opens sidebar)
     if (profileMenuBtn && sidebarMenu && overlay) {
         profileMenuBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            console.log('Profile menu button clicked');
-            console.log('Sidebar:', sidebarMenu);
-            console.log('Overlay:', overlay);
             sidebarMenu.classList.add('active');
             overlay.classList.add('active');
         });
-    } else {
-        console.log('Profile menu elements not found:', {
-            profileMenuBtn,
-            sidebarMenu,
-            overlay
-        });
     }
 
-    // Profile page user button (already on profile page, do nothing)
     if (profileUserBtn) {
-        profileUserBtn.addEventListener('click', () => {
-            // Already on profile page, no action needed
-        });
+        profileUserBtn.addEventListener('click', () => {});
     }
 
     if (profileCloseBtn) {
         profileCloseBtn.addEventListener('click', closeProfileModal);
     }
 
-    // Change Password button
     const passwordBtn = document.querySelector('.password-btn');
     if (passwordBtn) {
         passwordBtn.addEventListener('click', () => {
@@ -545,10 +490,9 @@ function initializeDashboard() {
     }
 
     // =========================================
-    // PLOT INTERACTION - SVG Clickable Areas
+    // PLOT INTERACTION
     // =========================================
     const plots = document.querySelectorAll('.plot');
-
     plots.forEach(plot => {
         plot.addEventListener('click', function() {
             const plotNumber = this.getAttribute('data-plot');
@@ -562,17 +506,14 @@ function initializeDashboard() {
         });
     });
 
-    // SVG Plot clickable areas
     const plotClickableAreas = document.querySelectorAll('.plot-clickable-area');
     plotClickableAreas.forEach(area => {
         area.addEventListener('click', function() {
             const plotNumber = this.getAttribute('data-plot');
-            // Redirect to plot details page
             window.location.href = `plot-details.html?plot=${plotNumber}`;
         });
     });
 
-    // Reservation button
     const reservationBtn = document.querySelector('.reservation-btn');
     if (reservationBtn) {
         reservationBtn.addEventListener('click', () => {
@@ -580,7 +521,6 @@ function initializeDashboard() {
         });
     }
 
-    // Payment history link
     const paymentHistoryLink = document.querySelector('.payment-history');
     if (paymentHistoryLink) {
         paymentHistoryLink.addEventListener('click', (e) => {
@@ -589,7 +529,6 @@ function initializeDashboard() {
         });
     }
 
-    // Add hover effect information
     plots.forEach(plot => {
         plot.addEventListener('mouseenter', function() {
             const plotNumber = this.getAttribute('data-plot');
@@ -601,18 +540,14 @@ function initializeDashboard() {
 
     console.log('Dashboard initialized successfully');
     
-    // =========================================
-    // AUTO-OPEN RESERVATION MODAL FROM URL
-    // =========================================
+    // Auto-open reservation modal from URL
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('openReservation') === 'true') {
-        // Immediately hide dashboard content
         const dashboardContent = document.querySelector('.dashboard-content');
         if (dashboardContent) {
             dashboardContent.style.display = 'none';
         }
         
-        // Open reservation modal immediately
         setTimeout(() => {
             openReservationModal();
         }, 100);
