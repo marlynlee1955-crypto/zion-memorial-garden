@@ -1,21 +1,16 @@
 // =========================================
 // DASHBOARD COMPONENT LOADER
-// Loads dashboard HTML components dynamically
 // =========================================
 
 async function loadDashboardComponent(elementId, componentPath) {
     try {
         const response = await fetch(componentPath);
-        if (!response.ok) {
-            throw new Error(`Failed to load ${componentPath}`);
-        }
+        if (!response.ok) throw new Error(`Failed to load ${componentPath}`);
         const html = await response.text();
         const element = document.getElementById(elementId);
-        if (element) {
-            element.innerHTML = html;
-        }
+        if (element) element.innerHTML = html;
     } catch (error) {
-        console.error('Error loading dashboard component:', error);
+        console.error('Error loading component:', error);
     }
 }
 
@@ -30,27 +25,14 @@ async function loadAllDashboardComponents() {
         loadDashboardComponent('my-reservation-page-component', 'components/my-reservation-content.html'),
         loadDashboardComponent('deceased-family-page-component', 'components/deceased-family-content.html')
     ]);
-    
+
     console.log('All dashboard components loaded successfully');
-    
     initializeDashboard();
-    
-    if (typeof initEditProfilePage === 'function') {
-        initEditProfilePage();
-    }
-    
-    if (typeof initMyReservationPage === 'function') {
-        initMyReservationPage();
-    }
-    
-    if (typeof initDeceasedFamilyPage === 'function') {
-        initDeceasedFamilyPage();
-    }
 }
 
 function initializeDashboard() {
+    // Session check
     const isLoggedIn = sessionStorage.getItem("isLoggedIn");
-    
     if (!isLoggedIn) {
         alert("Please login first");
         window.location.href = "index.html";
@@ -63,20 +45,19 @@ function initializeDashboard() {
         signoutBtn.addEventListener('click', () => {
             if (confirm("Are you sure you want to sign out?")) {
                 sessionStorage.clear();
-                localStorage.removeItem("rememberedEmail");
-                localStorage.removeItem("rememberedPassword");
                 window.location.href = "index.html";
             }
         });
     }
 
-    // Menu Toggle
+    // Sidebar elements
     const menuBtn = document.querySelector('.menu-btn');
-    const userBtn = document.querySelector('.user-btn');
     const sidebarMenu = document.getElementById('sidebarMenu');
     const overlay = document.getElementById('overlay');
     const closeBtn = document.getElementById('closeBtn');
+    const userBtn = document.querySelector('.user-btn');
 
+    // Open sidebar
     if (menuBtn && sidebarMenu && overlay) {
         menuBtn.addEventListener('click', () => {
             sidebarMenu.classList.add('active');
@@ -84,6 +65,7 @@ function initializeDashboard() {
         });
     }
 
+    // Close sidebar
     if (closeBtn && sidebarMenu && overlay) {
         closeBtn.addEventListener('click', () => {
             sidebarMenu.classList.remove('active');
@@ -98,108 +80,103 @@ function initializeDashboard() {
         });
     }
 
-    if (userBtn) {
-        userBtn.addEventListener('click', () => {
-            openProfileModal();
-        });
-    }
-
-    const profileMenuItem = document.getElementById('profileMenuItem');
-    if (profileMenuItem) {
-        profileMenuItem.addEventListener('click', (e) => {
-            e.preventDefault();
-            closeReservationModal();
-            openProfileModal();
-            updateActiveMenuItem('profile');
-            
-            if (sidebarMenu && overlay) {
-                sidebarMenu.classList.remove('active');
-                overlay.classList.remove('active');
-            }
-        });
-    }
-
-    const dashboardMenuItem = document.getElementById('dashboardMenuItem');
-    if (dashboardMenuItem) {
-        dashboardMenuItem.addEventListener('click', (e) => {
-            e.preventDefault();
-            closeReservationModal();
-            closeProfileModal();
-            updateActiveMenuItem('dashboard');
-            
-            if (sidebarMenu && overlay) {
-                sidebarMenu.classList.remove('active');
-                overlay.classList.remove('active');
-            }
-        });
-    }
-
-    function updateActiveMenuItem(page) {
-        const allMenuItems = document.querySelectorAll('.menu-item');
-        allMenuItems.forEach(item => item.classList.remove('active'));
-        
-        if (page === 'profile' && profileMenuItem) {
-            profileMenuItem.classList.add('active');
-        } else if (page === 'dashboard' && dashboardMenuItem) {
-            dashboardMenuItem.classList.add('active');
-        } else if (page === 'reservation') {
-            const reservePlotMenuItem = document.getElementById('reservePlotMenuItem');
-            if (reservePlotMenuItem) {
-                reservePlotMenuItem.classList.add('active');
-            }
-        }
-    }
-
     // Profile Modal
     const profileModal = document.querySelector('.profile-modal-overlay');
     const profileCloseBtn = document.querySelector('.profile-close-btn');
     const backToDashboardBtn = document.getElementById('backToDashboard');
-    const profileMenuBtn = document.getElementById('profileMenuBtn');
-    const profileUserBtn = document.getElementById('profileUserBtn');
 
     function openProfileModal() {
         if (profileModal) {
-            const userEmail = sessionStorage.getItem("userEmail") || "user@example.com";
-            const emailField = document.getElementById('profileEmail');
-            if (emailField) emailField.textContent = userEmail;
-            
-            loadProfilePicture();
             profileModal.classList.add('active');
-            updateActiveMenuItem('profile');
+            loadProfileFromDatabase(); // Load data from Supabase
         }
     }
 
     function closeProfileModal() {
         if (profileModal) {
             profileModal.classList.remove('active');
-            updateActiveMenuItem('dashboard');
         }
     }
 
-    function loadProfilePicture() {
-        const savedPicture = localStorage.getItem('userProfilePicture');
-        const defaultPicture = 'assets/images/icons/image 6.png';
-        
-        const profilePicture = document.getElementById('profilePicture');
-        if (profilePicture) {
-            profilePicture.src = savedPicture || defaultPicture;
-        }
-        
-        const profileUserBtnImg = document.querySelector('#profileUserBtn img');
-        if (profileUserBtnImg) {
-            profileUserBtnImg.src = savedPicture || defaultPicture;
-        }
-        
-        const userBtnImg = document.querySelector('.user-btn img');
-        if (userBtnImg) {
-            userBtnImg.src = savedPicture || defaultPicture;
+    if (userBtn) {
+        userBtn.addEventListener('click', openProfileModal);
+    }
+
+    if (profileCloseBtn) {
+        profileCloseBtn.addEventListener('click', closeProfileModal);
+    }
+
+    if (backToDashboardBtn) {
+        backToDashboardBtn.addEventListener('click', closeProfileModal);
+    }
+
+    // Sidebar Profile menu
+    const profileMenuItem = document.getElementById('profileMenuItem');
+    if (profileMenuItem) {
+        profileMenuItem.addEventListener('click', (e) => {
+            e.preventDefault();
+            openProfileModal();
+            if (sidebarMenu && overlay) {
+                sidebarMenu.classList.remove('active');
+                overlay.classList.remove('active');
+            }
+        });
+    }
+
+    // =========================================
+    // LOAD PROFILE FROM SUPABASE
+    // =========================================
+    async function loadProfileFromDatabase() {
+        try {
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            if (!user) return;
+
+            const { data: profile, error } = await supabaseClient
+                .from('profiles')
+                .select('*')
+                .eq('id', user.id)
+                .single();
+
+            if (error) {
+                console.error("Error loading profile:", error);
+                return;
+            }
+
+            if (profile) {
+                const fullNameEl = document.getElementById('profileFullName');
+                if (fullNameEl) fullNameEl.textContent = profile.full_name || "-";
+
+                const usernameEl = document.getElementById('profileUsername');
+                if (usernameEl) usernameEl.textContent = profile.username || "-";
+
+                const emailEl = document.getElementById('profileEmail');
+                if (emailEl) emailEl.textContent = profile.email || user.email || "-";
+
+                const phoneEl = document.getElementById('profilePhone');
+                if (phoneEl) phoneEl.textContent = profile.phone || "-";
+
+                const profilePicture = document.getElementById('profilePicture');
+                if (profilePicture) {
+                    profilePicture.src = profile.avatar_url || "https://via.placeholder.com/150/FFFFFF/CCCCCC?text=No+Photo";
+                }
+
+                const userBtnImg = document.querySelector('.user-btn img');
+                if (userBtnImg && profile.avatar_url) {
+                    userBtnImg.src = profile.avatar_url;
+                }
+
+                console.log("Profile loaded from database");
+            }
+        } catch (err) {
+            console.error(err);
         }
     }
 
     // =========================================
-    // EDIT PROFILE BUTTON (FIXED - keeps Profile page as background)
+    // EDIT PROFILE BUTTON
     // =========================================
     document.addEventListener('click', function(e) {
+        // Open Edit Profile
         if (e.target && (
             e.target.id === 'editProfileBtn' || 
             e.target.textContent.trim() === 'Edit Profile' ||
@@ -207,13 +184,11 @@ function initializeDashboard() {
         )) {
             e.preventDefault();
 
-            // Keep the Profile page visible in the background
-            const profileModal = document.querySelector('.profile-modal-overlay');
+            // Keep Profile page as background
             if (profileModal) {
                 profileModal.classList.add('active');
             }
 
-            // Show the edit profile popup on top
             const editProfilePage = document.getElementById('edit-profile-page-component');
             if (editProfilePage) {
                 editProfilePage.style.display = 'flex';
@@ -225,131 +200,31 @@ function initializeDashboard() {
             }
         }
 
-        // Close Edit Profile button
+        // Close Edit Profile
         if (e.target && (e.target.id === 'closeEditProfileBtn' || e.target.classList.contains('close-edit-profile'))) {
             const editProfilePage = document.getElementById('edit-profile-page-component');
             if (editProfilePage) {
                 editProfilePage.style.display = 'none';
                 editProfilePage.classList.remove('active');
             }
+            // Refresh the profile data
+            loadProfileFromDatabase();
         }
     });
 
-    loadProfilePicture();
-
-    // Reservation Modal
-    const reservationModal = document.querySelector('.reservation-modal-overlay');
+    // Reservation button
     const makeReservationBtn = document.getElementById('makeReservationBtn');
-    const reservePlotMenuItem = document.getElementById('reservePlotMenuItem');
-    const backFromReservation = document.getElementById('backFromReservation');
-    const proceedBtn = document.getElementById('proceedBtn');
-
-    const lawnDescriptions = {
-        'condominium': {
-            title: 'Condominium:',
-            desc: 'A vertical interment facility featuring stacked, above-ground vaults.'
-        },
-        'single-teired': {
-            title: 'Single Teired:',
-            desc: 'Traditional ground burial plots arranged in a single level.'
-        },
-        'supreme': {
-            title: 'Supreme:',
-            desc: 'Premium ground burial plots with enhanced features.'
-        },
-        'special-supreme': {
-            title: 'Special Supreme:',
-            desc: 'Our most exclusive ground burial option.'
-        },
-        'mausoleum': {
-            title: 'Mausoleum:',
-            desc: 'Above-ground entombment in a permanent structure.'
-        }
-    };
-
-    function openReservationModal() {
-        if (reservationModal) {
-            reservationModal.classList.add('active');
-        }
-    }
-
-    function closeReservationModal() {
-        if (reservationModal) {
-            reservationModal.classList.remove('active');
-        }
-    }
-
-    if (reservePlotMenuItem) {
-        reservePlotMenuItem.addEventListener('click', (e) => {
-            e.preventDefault();
-            openReservationModal();
-            updateActiveMenuItem('reservation');
-            
-            if (sidebarMenu && overlay) {
-                sidebarMenu.classList.remove('active');
-                overlay.classList.remove('active');
-            }
-        });
-    }
-
     if (makeReservationBtn) {
         makeReservationBtn.addEventListener('click', () => {
-            openReservationModal();
-        });
-    }
-
-    if (backFromReservation) {
-        backFromReservation.addEventListener('click', () => {
-            closeReservationModal();
-            updateActiveMenuItem('dashboard');
-        });
-    }
-
-    const lawnTabs = document.querySelectorAll('.lawn-tab');
-    const lawnTitle = document.getElementById('lawnTitle');
-    const lawnDesc = document.getElementById('lawnDesc');
-
-    lawnTabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            lawnTabs.forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            
-            const lawnType = tab.getAttribute('data-lawn');
-            if (lawnDescriptions[lawnType] && lawnTitle && lawnDesc) {
-                lawnTitle.textContent = lawnDescriptions[lawnType].title;
-                lawnDesc.textContent = lawnDescriptions[lawnType].desc;
+            const reservationModal = document.querySelector('.reservation-modal-overlay');
+            if (reservationModal) {
+                reservationModal.classList.add('active');
             }
-        });
-    });
-
-    if (proceedBtn) {
-        proceedBtn.addEventListener('click', () => {
-            const selectedPlot = document.getElementById('selectedPlot');
-            if (selectedPlot && selectedPlot.textContent === 'None') {
-                alert('Please select a plot location first');
-            } else {
-                alert('Proceeding with reservation...');
-            }
-        });
-    }
-
-    if (backToDashboardBtn) {
-        backToDashboardBtn.addEventListener('click', closeProfileModal);
-    }
-
-    if (profileCloseBtn) {
-        profileCloseBtn.addEventListener('click', closeProfileModal);
-    }
-
-    const passwordBtn = document.querySelector('.password-btn');
-    if (passwordBtn) {
-        passwordBtn.addEventListener('click', () => {
-            alert('Change Password functionality - Coming soon!');
         });
     }
 
     console.log('Dashboard initialized successfully');
 }
 
-// Load components when DOM is ready
+// Start everything
 document.addEventListener('DOMContentLoaded', loadAllDashboardComponents);
