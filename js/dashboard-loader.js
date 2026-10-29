@@ -20,7 +20,6 @@ async function loadDashboardComponent(elementId, componentPath) {
 }
 
 async function loadAllDashboardComponents() {
-    // Load all dashboard components
     await Promise.all([
         loadDashboardComponent('sidebar-component', 'components/dashboard-sidebar.html'),
         loadDashboardComponent('header-component', 'components/dashboard-header.html'),
@@ -34,29 +33,22 @@ async function loadAllDashboardComponents() {
     
     console.log('All dashboard components loaded successfully');
     
-    // Initialize dashboard functionality after components are loaded
     initializeDashboard();
     
-    // Initialize edit profile page
     if (typeof initEditProfilePage === 'function') {
         initEditProfilePage();
     }
     
-    // Initialize my reservation page
     if (typeof initMyReservationPage === 'function') {
         initMyReservationPage();
     }
     
-    // Initialize deceased family page
     if (typeof initDeceasedFamilyPage === 'function') {
         initDeceasedFamilyPage();
     }
 }
 
 function initializeDashboard() {
-    // =========================================
-    // SESSION CHECK - Redirect if not logged in
-    // =========================================
     const isLoggedIn = sessionStorage.getItem("isLoggedIn");
     
     if (!isLoggedIn) {
@@ -65,9 +57,7 @@ function initializeDashboard() {
         return;
     }
 
-    // =========================================
-    // LOGOUT FUNCTIONALITY
-    // =========================================
+    // Logout
     const signoutBtn = document.querySelector('.signout-btn');
     if (signoutBtn) {
         signoutBtn.addEventListener('click', () => {
@@ -80,9 +70,7 @@ function initializeDashboard() {
         });
     }
 
-    // =========================================
-    // MENU TOGGLE FUNCTIONALITY
-    // =========================================
+    // Menu Toggle
     const menuBtn = document.querySelector('.menu-btn');
     const userBtn = document.querySelector('.user-btn');
     const sidebarMenu = document.getElementById('sidebarMenu');
@@ -116,7 +104,6 @@ function initializeDashboard() {
         });
     }
 
-    // Profile menu item
     const profileMenuItem = document.getElementById('profileMenuItem');
     if (profileMenuItem) {
         profileMenuItem.addEventListener('click', (e) => {
@@ -132,7 +119,6 @@ function initializeDashboard() {
         });
     }
 
-    // Dashboard menu item
     const dashboardMenuItem = document.getElementById('dashboardMenuItem');
     if (dashboardMenuItem) {
         dashboardMenuItem.addEventListener('click', (e) => {
@@ -164,9 +150,7 @@ function initializeDashboard() {
         }
     }
 
-    // =========================================
-    // PROFILE MODAL FUNCTIONALITY
-    // =========================================
+    // Profile Modal
     const profileModal = document.querySelector('.profile-modal-overlay');
     const profileCloseBtn = document.querySelector('.profile-close-btn');
     const backToDashboardBtn = document.getElementById('backToDashboard');
@@ -192,12 +176,8 @@ function initializeDashboard() {
         }
     }
 
-    // =========================================
-    // PROFILE PICTURE FUNCTIONALITY
-    // =========================================
     function loadProfilePicture() {
         const savedPicture = localStorage.getItem('userProfilePicture');
-        const savedProfile = localStorage.getItem('userProfile');
         const defaultPicture = 'assets/images/icons/image 6.png';
         
         const profilePicture = document.getElementById('profilePicture');
@@ -214,45 +194,10 @@ function initializeDashboard() {
         if (userBtnImg) {
             userBtnImg.src = savedPicture || defaultPicture;
         }
-
-        if (savedProfile) {
-            const profile = JSON.parse(savedProfile);
-            
-            const profileDisplayName = document.getElementById('profileDisplayName');
-            const profileUsernameDisplay = document.getElementById('profileUsernameDisplay');
-            const profileFullName = document.getElementById('profileFullName');
-            const profileUsername = document.getElementById('profileUsername');
-            const profileEmail = document.getElementById('profileEmail');
-            const profilePhone = document.getElementById('profilePhone');
-            
-            if (profileDisplayName && profile.fullName) {
-                profileDisplayName.textContent = profile.fullName.toUpperCase();
-            }
-            if (profileUsernameDisplay && profile.username) {
-                profileUsernameDisplay.textContent = profile.username;
-            }
-            if (profileFullName && profile.fullName) {
-                profileFullName.textContent = profile.fullName;
-            }
-            if (profileUsername && profile.username) {
-                profileUsername.textContent = profile.username;
-            }
-            if (profileEmail && profile.email) {
-                profileEmail.textContent = profile.email;
-            }
-            if (profilePhone && profile.phone) {
-                profilePhone.textContent = profile.phone;
-            }
-        }
-    }
-
-    function saveProfilePicture(imageDataUrl) {
-        localStorage.setItem('userProfilePicture', imageDataUrl);
-        loadProfilePicture();
     }
 
     // =========================================
-    // EDIT PROFILE BUTTON (FIXED)
+    // EDIT PROFILE BUTTON (FIXED - keeps Profile page as background)
     // =========================================
     document.addEventListener('click', function(e) {
         if (e.target && (
@@ -262,19 +207,18 @@ function initializeDashboard() {
         )) {
             e.preventDefault();
 
-            // Close profile modal if open
+            // Keep the Profile page visible in the background
             const profileModal = document.querySelector('.profile-modal-overlay');
             if (profileModal) {
-                profileModal.classList.remove('active');
+                profileModal.classList.add('active');
             }
 
-            // Show the edit profile page component
+            // Show the edit profile popup on top
             const editProfilePage = document.getElementById('edit-profile-page-component');
             if (editProfilePage) {
-                editProfilePage.style.display = 'block';
+                editProfilePage.style.display = 'flex';
                 editProfilePage.classList.add('active');
 
-                // Call the init function
                 if (typeof initEditProfilePage === 'function') {
                     initEditProfilePage();
                 }
@@ -291,63 +235,47 @@ function initializeDashboard() {
         }
     });
 
-    // Load profile picture on page load
     loadProfilePicture();
 
-    // =========================================
-    // RESERVATION MODAL FUNCTIONALITY
-    // =========================================
+    // Reservation Modal
     const reservationModal = document.querySelector('.reservation-modal-overlay');
-    const reservationMenuBtn = document.getElementById('reservationMenuBtn');
-    const reservationUserBtn = document.getElementById('reservationUserBtn');
-    const backFromReservation = document.getElementById('backFromReservation');
     const makeReservationBtn = document.getElementById('makeReservationBtn');
     const reservePlotMenuItem = document.getElementById('reservePlotMenuItem');
+    const backFromReservation = document.getElementById('backFromReservation');
     const proceedBtn = document.getElementById('proceedBtn');
 
     const lawnDescriptions = {
         'condominium': {
             title: 'Condominium:',
-            desc: 'A vertical interment facility featuring stacked, above-ground vaults. This section offers a structured and organized memorial space, utilizing a multi-level grid system for efficient space management and easy identification of individual niches'
+            desc: 'A vertical interment facility featuring stacked, above-ground vaults.'
         },
         'single-teired': {
             title: 'Single Teired:',
-            desc: 'Traditional ground burial plots arranged in a single level. This classic option provides a peaceful resting place with individual grave sites, perfect for families seeking a traditional memorial setting'
+            desc: 'Traditional ground burial plots arranged in a single level.'
         },
         'supreme': {
             title: 'Supreme:',
-            desc: 'Premium ground burial plots with enhanced features and larger space. These plots offer superior positioning and additional amenities for families who desire an elevated memorial experience'
+            desc: 'Premium ground burial plots with enhanced features.'
         },
         'special-supreme': {
             title: 'Special Supreme:',
-            desc: 'Our most exclusive ground burial option, featuring the finest locations and maximum space. Special Supreme plots provide unparalleled prestige and comfort for distinguished families'
+            desc: 'Our most exclusive ground burial option.'
         },
         'mausoleum': {
             title: 'Mausoleum:',
-            desc: 'Above-ground entombment in a permanent structure. Mausoleums offer protection from the elements and provide a dignified, lasting memorial in a climate-controlled environment'
+            desc: 'Above-ground entombment in a permanent structure.'
         }
     };
 
     function openReservationModal() {
         if (reservationModal) {
             reservationModal.classList.add('active');
-            
-            const reservationUserBtnImg = document.querySelector('#reservationUserBtn img');
-            const savedPicture = localStorage.getItem('userProfilePicture');
-            if (reservationUserBtnImg && savedPicture) {
-                reservationUserBtnImg.src = savedPicture;
-            }
         }
     }
 
     function closeReservationModal() {
         if (reservationModal) {
             reservationModal.classList.remove('active');
-            
-            const dashboardContent = document.querySelector('.dashboard-content');
-            if (dashboardContent) {
-                dashboardContent.style.display = 'block';
-            }
         }
     }
 
@@ -356,48 +284,6 @@ function initializeDashboard() {
             e.preventDefault();
             openReservationModal();
             updateActiveMenuItem('reservation');
-            
-            if (sidebarMenu && overlay) {
-                sidebarMenu.classList.remove('active');
-                overlay.classList.remove('active');
-            }
-        });
-    }
-
-    const myReservationMenuItem = document.getElementById('myReservationMenuItem');
-    if (myReservationMenuItem) {
-        myReservationMenuItem.addEventListener('click', (e) => {
-            e.preventDefault();
-            closeReservationModal();
-            closeProfileModal();
-            
-            const myReservationPage = document.getElementById('myReservationPage');
-            if (myReservationPage) {
-                myReservationPage.classList.add('active');
-            }
-            
-            updateActiveMenuItem('myreservation');
-            
-            if (sidebarMenu && overlay) {
-                sidebarMenu.classList.remove('active');
-                overlay.classList.remove('active');
-            }
-        });
-    }
-
-    const deceasedFamilyMenuItem = document.getElementById('deceasedFamilyMenuItem');
-    if (deceasedFamilyMenuItem) {
-        deceasedFamilyMenuItem.addEventListener('click', (e) => {
-            e.preventDefault();
-            closeReservationModal();
-            closeProfileModal();
-            
-            const deceasedFamilyPage = document.getElementById('deceasedFamilyPage');
-            if (deceasedFamilyPage) {
-                deceasedFamilyPage.classList.add('active');
-            }
-            
-            updateActiveMenuItem('deceasedfamily');
             
             if (sidebarMenu && overlay) {
                 sidebarMenu.classList.remove('active');
@@ -419,21 +305,6 @@ function initializeDashboard() {
         });
     }
 
-    if (reservationMenuBtn && sidebarMenu && overlay) {
-        reservationMenuBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            sidebarMenu.classList.add('active');
-            overlay.classList.add('active');
-        });
-    }
-
-    if (reservationUserBtn) {
-        reservationUserBtn.addEventListener('click', () => {
-            closeReservationModal();
-            openProfileModal();
-        });
-    }
-
     const lawnTabs = document.querySelectorAll('.lawn-tab');
     const lawnTitle = document.getElementById('lawnTitle');
     const lawnDesc = document.getElementById('lawnDesc');
@@ -444,7 +315,7 @@ function initializeDashboard() {
             tab.classList.add('active');
             
             const lawnType = tab.getAttribute('data-lawn');
-            if (lawnDescriptions[lawnType]) {
+            if (lawnDescriptions[lawnType] && lawnTitle && lawnDesc) {
                 lawnTitle.textContent = lawnDescriptions[lawnType].title;
                 lawnDesc.textContent = lawnDescriptions[lawnType].desc;
             }
@@ -453,29 +324,17 @@ function initializeDashboard() {
 
     if (proceedBtn) {
         proceedBtn.addEventListener('click', () => {
-            const selectedPlot = document.getElementById('selectedPlot').textContent;
-            if (selectedPlot === 'None') {
+            const selectedPlot = document.getElementById('selectedPlot');
+            if (selectedPlot && selectedPlot.textContent === 'None') {
                 alert('Please select a plot location first');
             } else {
-                alert(`Proceeding with reservation for: ${selectedPlot}\nReservation form - Coming soon!`);
+                alert('Proceeding with reservation...');
             }
         });
     }
 
     if (backToDashboardBtn) {
         backToDashboardBtn.addEventListener('click', closeProfileModal);
-    }
-
-    if (profileMenuBtn && sidebarMenu && overlay) {
-        profileMenuBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            sidebarMenu.classList.add('active');
-            overlay.classList.add('active');
-        });
-    }
-
-    if (profileUserBtn) {
-        profileUserBtn.addEventListener('click', () => {});
     }
 
     if (profileCloseBtn) {
@@ -489,69 +348,7 @@ function initializeDashboard() {
         });
     }
 
-    // =========================================
-    // PLOT INTERACTION
-    // =========================================
-    const plots = document.querySelectorAll('.plot');
-    plots.forEach(plot => {
-        plot.addEventListener('click', function() {
-            const plotNumber = this.getAttribute('data-plot');
-            const isAvailable = this.classList.contains('available');
-            
-            if (isAvailable) {
-                alert(`Plot ${plotNumber} is available. Would you like to make a reservation?`);
-            } else {
-                alert(`Plot ${plotNumber} is occupied.`);
-            }
-        });
-    });
-
-    const plotClickableAreas = document.querySelectorAll('.plot-clickable-area');
-    plotClickableAreas.forEach(area => {
-        area.addEventListener('click', function() {
-            const plotNumber = this.getAttribute('data-plot');
-            window.location.href = `plot-details.html?plot=${plotNumber}`;
-        });
-    });
-
-    const reservationBtn = document.querySelector('.reservation-btn');
-    if (reservationBtn) {
-        reservationBtn.addEventListener('click', () => {
-            openReservationModal();
-        });
-    }
-
-    const paymentHistoryLink = document.querySelector('.payment-history');
-    if (paymentHistoryLink) {
-        paymentHistoryLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            alert('Opening payment history...');
-        });
-    }
-
-    plots.forEach(plot => {
-        plot.addEventListener('mouseenter', function() {
-            const plotNumber = this.getAttribute('data-plot');
-            const isAvailable = this.classList.contains('available');
-            const status = isAvailable ? 'Available' : 'Occupied';
-            console.log(`Plot ${plotNumber}: ${status}`);
-        });
-    });
-
     console.log('Dashboard initialized successfully');
-    
-    // Auto-open reservation modal from URL
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('openReservation') === 'true') {
-        const dashboardContent = document.querySelector('.dashboard-content');
-        if (dashboardContent) {
-            dashboardContent.style.display = 'none';
-        }
-        
-        setTimeout(() => {
-            openReservationModal();
-        }, 100);
-    }
 }
 
 // Load components when DOM is ready
