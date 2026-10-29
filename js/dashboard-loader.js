@@ -88,7 +88,7 @@ function initializeDashboard() {
     function openProfileModal() {
         if (profileModal) {
             profileModal.classList.add('active');
-            loadProfileFromDatabase(); // Load data from Supabase
+            loadProfileFromDatabase();
         }
     }
 
@@ -184,7 +184,6 @@ function initializeDashboard() {
         )) {
             e.preventDefault();
 
-            // Keep Profile page as background
             if (profileModal) {
                 profileModal.classList.add('active');
             }
@@ -207,12 +206,75 @@ function initializeDashboard() {
                 editProfilePage.style.display = 'none';
                 editProfilePage.classList.remove('active');
             }
-            // Refresh the profile data
             loadProfileFromDatabase();
         }
     });
 
-    // Reservation button
+    // =========================================
+    // SIDEBAR MENU ITEMS
+    // =========================================
+
+    // Reserve a plot
+    const reservePlotMenuItem = document.getElementById('reservePlotMenuItem');
+    if (reservePlotMenuItem) {
+        reservePlotMenuItem.addEventListener('click', (e) => {
+            e.preventDefault();
+            const reservationModal = document.querySelector('.reservation-modal-overlay');
+            if (reservationModal) {
+                reservationModal.classList.add('active');
+            }
+            if (sidebarMenu && overlay) {
+                sidebarMenu.classList.remove('active');
+                overlay.classList.remove('active');
+            }
+        });
+    }
+
+    // My Reservation
+    const myReservationMenuItem = document.getElementById('myReservationMenuItem');
+    if (myReservationMenuItem) {
+        myReservationMenuItem.addEventListener('click', (e) => {
+            e.preventDefault();
+            const myReservationPage = document.getElementById('my-reservation-page-component');
+            if (myReservationPage) {
+                myReservationPage.style.display = 'block';
+                myReservationPage.classList.add('active');
+            }
+            if (sidebarMenu && overlay) {
+                sidebarMenu.classList.remove('active');
+                overlay.classList.remove('active');
+            }
+        });
+    }
+
+    // Deceased Family
+    const deceasedFamilyMenuItem = document.getElementById('deceasedFamilyMenuItem');
+    if (deceasedFamilyMenuItem) {
+        deceasedFamilyMenuItem.addEventListener('click', (e) => {
+            e.preventDefault();
+            const deceasedPage = document.getElementById('deceased-family-page-component');
+            if (deceasedPage) {
+                deceasedPage.style.display = 'block';
+                deceasedPage.classList.add('active');
+            }
+            if (sidebarMenu && overlay) {
+                sidebarMenu.classList.remove('active');
+                overlay.classList.remove('active');
+            }
+        });
+    }
+
+    // Menu button inside Profile page
+    const profileMenuBtn = document.getElementById('profileMenuBtn');
+    if (profileMenuBtn && sidebarMenu && overlay) {
+        profileMenuBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            sidebarMenu.classList.add('active');
+            overlay.classList.add('active');
+        });
+    }
+
+    // Make a Reservation button on dashboard
     const makeReservationBtn = document.getElementById('makeReservationBtn');
     if (makeReservationBtn) {
         makeReservationBtn.addEventListener('click', () => {
@@ -226,5 +288,5 @@ function initializeDashboard() {
     console.log('Dashboard initialized successfully');
 }
 
-// Start everything
+// Start
 document.addEventListener('DOMContentLoaded', loadAllDashboardComponents);
